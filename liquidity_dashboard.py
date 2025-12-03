@@ -1,5 +1,4 @@
-# liquidity_dashboard.py
-# USD Liquidity + BTC/ETH Dashboard  (crash-free edition)
+# liquidity_dashboard.py  (re-base to START of window)
 # ---------------------------------------------------------
 from io import StringIO
 import datetime as dt
@@ -53,7 +52,6 @@ def compute_liquidity_scores(df: pd.DataFrame) -> pd.DataFrame:
     for col in FRED_SERIES.keys():
         mean, std = out[col].mean(), out[col].std() or 1e-9
         out[f"{col}_z"] = (out[col] - mean) / std
-    # flip signs: higher TGA / RRP → lower liquidity
     out["TGA (WTREGEN)_z"] *= -1
     out["Reverse Repo (ON RRP)_z"] *= -1
     z_cols = [c for c in out.columns if c.endswith("_z")]
@@ -113,7 +111,7 @@ with tabs[3]:  # S&P 500
         st.line_chart(overlay.set_index("date")[["liq_rebase", "sp_rebase"]]
                          .rename(columns={"liq_rebase": "Liquidity", "sp_rebase": "S&P 500"}))
 
-with tabs[4]:  # Bitcoin
+with tabs[4]:  # Bitcoin  (re-base to START)
     st.header("Liquidity Index vs Bitcoin Price")
     btc = load_fred_series("CBBTCUSD").rename(columns={"value": "price"})
     overlay = pd.merge(df[["date", "liquidity_index"]], btc, on="date", how="inner")
@@ -126,7 +124,7 @@ with tabs[4]:  # Bitcoin
                          .rename(columns={"liq_rebase": "Liquidity", "btc_rebase": "Bitcoin"}))
         st.metric("Latest BTC Price (FRED)", f"${overlay['price'].iloc[-1]:,.0f}")
 
-with tabs[5]:  # Ethereum
+with tabs[5]:  # Ethereum  (re-base to START)
     st.header("Liquidity Index vs Ethereum Price")
     eth = load_fred_series("CBETHUSD").rename(columns={"value": "price"})
     overlay = pd.merge(df[["date", "liquidity_index"]], eth, on="date", how="inner")
@@ -143,4 +141,4 @@ with tabs[6]:  # Raw Data
     st.dataframe(df, use_container_width=True)
     st.download_button("Download CSV", df.to_csv(index=False), "liquidity_data.csv", "text/csv")
 
-st.success("Dashboard running crash-free with FRED crypto prices")
+st.success("Dashboard running crash-free with FRED crypto prices (re-based to start of window)")
