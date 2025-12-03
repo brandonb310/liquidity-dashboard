@@ -111,30 +111,56 @@ with tabs[3]:  # S&P 500
         st.line_chart(overlay.set_index("date")[["liq_rebase", "sp_rebase"]]
                          .rename(columns={"liq_rebase": "Liquidity", "sp_rebase": "S&P 500"}))
 
-with tabs[4]:  # Bitcoin  (re-base to START)
+with tabs[4]:  # Bitcoin
+    import plotly.graph_objects as go
+
     st.header("Liquidity Index vs Bitcoin Price")
     btc = load_fred_series("CBBTCUSD").rename(columns={"value": "price"})
     overlay = pd.merge(df[["date", "liquidity_index"]], btc, on="date", how="inner")
     if overlay.empty:
         st.warning("No Bitcoin data in selected range (starts 2014-09)")
     else:
-        overlay["liq_rebase"] = overlay["liquidity_index"] / overlay["liquidity_index"].iloc[0]
-        overlay["btc_rebase"] = overlay["price"] / overlay["price"].iloc[0]
-        st.line_chart(overlay.set_index("date")[["liq_rebase", "btc_rebase"]]
-                         .rename(columns={"liq_rebase": "Liquidity", "btc_rebase": "Bitcoin"}))
+        fig = go.Figure()
+        # left axis: liquidity
+        fig.add_trace(go.Scatter(
+            x=overlay["date"], y=overlay["liquidity_index"],
+            name="Liquidity Index", yaxis="y", line=dict(color="#00bfff")))
+        # right axis: BTC price
+        fig.add_trace(go.Scatter(
+            x=overlay["date"], y=overlay["price"],
+            name="BTC Price", yaxis="y2", line=dict(color="#f7931a")))
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis=dict(title="Liquidity Index", side="left"),
+            yaxis2=dict(title="BTC USD", side="right", overlaying="y", showgrid=False),
+            legend=dict(x=0, y=1.1, orientation="h"))
+        st.plotly_chart(fig, use_container_width=True)
         st.metric("Latest BTC Price (FRED)", f"${overlay['price'].iloc[-1]:,.0f}")
 
-with tabs[5]:  # Ethereum  (re-base to START)
+with tabs[5]:  # Ethereum
+    import plotly.graph_objects as go
+
     st.header("Liquidity Index vs Ethereum Price")
     eth = load_fred_series("CBETHUSD").rename(columns={"value": "price"})
     overlay = pd.merge(df[["date", "liquidity_index"]], eth, on="date", how="inner")
     if overlay.empty:
         st.warning("No Ethereum data — starts ~2017")
     else:
-        overlay["liq_rebase"] = overlay["liquidity_index"] / overlay["liquidity_index"].iloc[0]
-        overlay["eth_rebase"] = overlay["price"] / overlay["price"].iloc[0]
-        st.line_chart(overlay.set_index("date")[["liq_rebase", "eth_rebase"]]
-                         .rename(columns={"liq_rebase": "Liquidity", "eth_rebase": "Ethereum"}))
+        fig = go.Figure()
+        # left axis: liquidity
+        fig.add_trace(go.Scatter(
+            x=overlay["date"], y=overlay["liquidity_index"],
+            name="Liquidity Index", yaxis="y", line=dict(color="#00bfff")))
+        # right axis: ETH price
+        fig.add_trace(go.Scatter(
+            x=overlay["date"], y=overlay["price"],
+            name="ETH Price", yaxis="y2", line=dict(color="#627eea")))
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis=dict(title="Liquidity Index", side="left"),
+            yaxis2=dict(title="ETH USD", side="right", overlaying="y", showgrid=False),
+            legend=dict(x=0, y=1.1, orientation="h"))
+        st.plotly_chart(fig, use_container_width=True)
         st.metric("Latest ETH Price (FRED)", f"${overlay['price'].iloc[-1]:,.0f}")
 
 with tabs[6]:  # Raw Data
